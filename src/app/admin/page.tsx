@@ -38,6 +38,9 @@ import {
 } from "lucide-react";
 
 const ADMIN_SESSION_EVENT = "royal-admin-session-change";
+const ADMIN_SESSION_KEY = "royal_admin_last_activity";
+const ADMIN_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
+const ADMIN_SESSION_REFRESH_INTERVAL_MS = 30 * 1000;
 
 function subscribeToAdminSession(onChange: () => void) {
   window.addEventListener("storage", onChange);
@@ -49,7 +52,17 @@ function subscribeToAdminSession(onChange: () => void) {
 }
 
 function getAdminSessionSnapshot() {
-  return localStorage.getItem("royal_admin_token") !== null;
+  const lastActivityAt = Number(localStorage.getItem(ADMIN_SESSION_KEY));
+  return (
+    Number.isFinite(lastActivityAt) &&
+    lastActivityAt > 0 &&
+    Date.now() - lastActivityAt < ADMIN_IDLE_TIMEOUT_MS
+  );
+}
+
+function clearAdminSessionState() {
+  localStorage.removeItem(ADMIN_SESSION_KEY);
+  window.dispatchEvent(new Event(ADMIN_SESSION_EVENT));
 }
 
 export default function AdminPage() {
@@ -92,6 +105,76 @@ export default function AdminPage() {
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+
+    let idleTimeout: ReturnType<typeof setTimeout>;
+    let lastStoredAt = Date.now();
+    let lastSessionRefreshAt = 0;
+    let lastActivityHandledAt = 0;
+
+    const logoutAfterInactivity = () => {
+      clearAdminSessionState();
+      setAuthError("Sesi berakhir setelah 5 menit tidak aktif. Silakan masuk kembali.");
+      void fetch("/api/auth", { method: "DELETE", cache: "no-store" }).catch(
+        () => undefined,
+      );
+    };
+
+    const scheduleIdleLogout = (delay = ADMIN_IDLE_TIMEOUT_MS) => {
+      clearTimeout(idleTimeout);
+      idleTimeout = setTimeout(logoutAfterInactivity, delay);
+    };
+
+    const handleActivity = () => {
+      const now = Date.now();
+      if (now - lastActivityHandledAt < 1_000) return;
+      lastActivityHandledAt = now;
+
+      if (now - lastStoredAt >= 10_000) {
+        localStorage.setItem(ADMIN_SESSION_KEY, String(now));
+        lastStoredAt = now;
+      }
+
+      if (now - lastSessionRefreshAt >= ADMIN_SESSION_REFRESH_INTERVAL_MS) {
+        lastSessionRefreshAt = now;
+        void fetch("/api/auth", { cache: "no-store" })
+          .then((response) => {
+            if (response.status === 401) logoutAfterInactivity();
+          })
+          .catch(() => undefined);
+      }
+
+      scheduleIdleLogout();
+    };
+
+    const activityOptions: AddEventListenerOptions = { passive: true };
+    const activityEvents = [
+      "pointerdown",
+      "keydown",
+      "mousemove",
+      "scroll",
+      "touchstart",
+    ] as const;
+
+    const lastActivityAt = Number(localStorage.getItem(ADMIN_SESSION_KEY));
+    const remainingIdleTime = Math.max(
+      0,
+      ADMIN_IDLE_TIMEOUT_MS - (Date.now() - lastActivityAt),
+    );
+    scheduleIdleLogout(remainingIdleTime);
+    activityEvents.forEach((eventName) =>
+      window.addEventListener(eventName, handleActivity, activityOptions),
+    );
+
+    return () => {
+      clearTimeout(idleTimeout);
+      activityEvents.forEach((eventName) =>
+        window.removeEventListener(eventName, handleActivity, activityOptions),
+      );
+    };
+  }, [isAuthenticated]);
+
+  useEffect(() => {
     fetch("/api/content", { cache: "no-store" })
       .then(async (res) => {
         const json = await res.json();
@@ -131,7 +214,7 @@ export default function AdminPage() {
 
       const json = await res.json();
       if (json.success) {
-        localStorage.setItem("royal_admin_token", json.token);
+        localStorage.setItem(ADMIN_SESSION_KEY, String(Date.now()));
         window.dispatchEvent(new Event(ADMIN_SESSION_EVENT));
         setAuthError("");
       } else {
@@ -145,8 +228,10 @@ export default function AdminPage() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("royal_admin_token");
-    window.dispatchEvent(new Event(ADMIN_SESSION_EVENT));
+    clearAdminSessionState();
+    void fetch("/api/auth", { method: "DELETE", cache: "no-store" }).catch(
+      () => undefined,
+    );
   };
 
   const updateSectionVisibility = (
@@ -175,7 +260,7 @@ export default function AdminPage() {
     if (dataToSave.portfolio.length > 10) {
       setSaveMessage({
         type: "error",
-        text: "Kapasitas portofolio maksimal 10 foto! Anda harus mengorbankan salah satu foto terlebih dahulu.",
+        text: "Kapasitas portofolio maksimal 10 foto! Hapus salah satu foto terlebih dahulu."
       });
       return;
     }
@@ -191,6 +276,10 @@ export default function AdminPage() {
       });
 
       const json = await res.json();
+      if (res.status === 401) {
+        clearAdminSessionState();
+        setAuthError("Sesi login berakhir. Silakan masuk kembali.");
+      }
       if (!res.ok || !json.success || !json.data) {
         throw new Error(json.message || "Perubahan gagal disimpan.");
       }
@@ -225,6 +314,10 @@ export default function AdminPage() {
       body: formData,
     });
     const json = await res.json();
+    if (res.status === 401) {
+      clearAdminSessionState();
+      setAuthError("Sesi login berakhir. Silakan masuk kembali.");
+    }
     if (!res.ok || !json.success) {
       throw new Error(json.message || "Gagal mengunggah gambar.");
     }
@@ -297,15 +390,15 @@ export default function AdminPage() {
     setNewPhotoUrl("");
   };
 
-  // Portfolio: Sacrifice
-  const handleSacrificePhoto = (index: number) => {
+  // Portfolio: Delete
+  const handleDeletePhoto = (index: number) => {
     if (!content) return;
     const target = content.portfolio[index];
-    const confirmSacrifice = window.confirm(
-      `KORBANKAN FOTO INI?\n\nAnda akan menghapus foto "${target.title}" dari portofolio untuk mengosongkan 1 slot foto.\n\nLanjutkan?`,
+    const confirmDelete = window.confirm(
+      `HAPUS FOTO INI?\n\nFoto "${target.title}" akan dihapus dari portofolio.\n\nLanjutkan?`,
     );
 
-    if (confirmSacrifice) {
+    if (confirmDelete) {
       const updatedPortfolio = content.portfolio.filter(
         (_, idx) => idx !== index,
       );
@@ -812,8 +905,8 @@ export default function AdminPage() {
                         ⚠️{" "}
                         <strong>KUOTA MAKSIMAL (10 FOTO) SUDAH PENUH!</strong>{" "}
                         Sesuai aturan: jika Anda ingin mengunggah foto baru,
-                        Anda <u>wajib mengorbankan (menghapus)</u> salah satu
-                        foto di bawah ini terlebih dahulu, atau klik{" "}
+                        Hapus salah satu foto di bawah ini terlebih dahulu, atau
+                        klik{" "}
                         <u>Ganti Gambar</u> pada slot yang ingin digantikan.
                       </span>
                     ) : (
@@ -837,7 +930,7 @@ export default function AdminPage() {
               </h3>
               <p className="text-xs text-[#8C827A] mb-5">
                 {isPortfolioFull
-                  ? "Form terkunci karena kapasitas sudah 10/10 foto. Korbankan salah satu foto di bawah untuk membuka slot baru."
+                  ? "Form terkunci karena kapasitas sudah 10/10 foto. Hapus salah satu foto di bawah untuk membuka slot baru."
                   : "Unggah foto dokumentasi acara baru untuk mengisi slot berikutnya."}
               </p>
 
@@ -1098,12 +1191,12 @@ export default function AdminPage() {
                     </div>
 
                     <button
-                      onClick={() => handleSacrificePhoto(index)}
+                      onClick={() => handleDeletePhoto(index)}
                       className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-950/60 hover:bg-rose-900 text-rose-300 text-xs font-semibold transition border border-rose-800"
-                      title="Korbankan foto ini untuk mengosongkan 1 slot"
+                      title="Hapus foto ini"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                      <span>Korbankan Foto</span>
+                      <span>Hapus</span>
                     </button>
                   </div>
                 </div>

@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getContent, saveContent } from "@/lib/content";
 import { CateringContent } from "@/types/content";
+import {
+  adminSessionExpiredResponse,
+  isAdminSessionValid,
+  setAdminSessionCookie,
+} from "@/lib/admin-session";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +32,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  if (!isAdminSessionValid(req)) return adminSessionExpiredResponse();
+
   try {
     const body: CateringContent = await req.json();
 
@@ -43,7 +50,7 @@ export async function POST(req: NextRequest) {
         {
           success: false,
           message:
-            "Kapasitas portofolio maksimal 10 foto! Anda harus mengorbankan atau menghapus salah satu foto terlebih dahulu.",
+            "Kapasitas portofolio maksimal 10 foto! Hapus salah satu foto terlebih dahulu.",
         },
         { status: 400 }
       );
@@ -51,11 +58,13 @@ export async function POST(req: NextRequest) {
 
     const saved = await saveContent(body);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: "Konten website berhasil disimpan!",
       data: saved,
     });
+    setAdminSessionCookie(response);
+    return response;
   } catch (error) {
     console.error("Gagal menyimpan konten CMS:", error);
     return NextResponse.json(

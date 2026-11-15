@@ -3,6 +3,11 @@ import fs from "fs/promises";
 import path from "path";
 import { del, put } from "@vercel/blob";
 import { shouldUseBlobStorage } from "@/lib/blob-storage";
+import {
+  adminSessionExpiredResponse,
+  isAdminSessionValid,
+  setAdminSessionCookie,
+} from "@/lib/admin-session";
 
 // Helper to safely delete file inside public/uploads
 async function safelyDeleteUploadFile(fileUrl?: string | null) {
@@ -24,6 +29,8 @@ async function safelyDeleteUploadFile(fileUrl?: string | null) {
 }
 
 export async function POST(req: NextRequest) {
+  if (!isAdminSessionValid(req)) return adminSessionExpiredResponse();
+
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
@@ -84,12 +91,14 @@ export async function POST(req: NextRequest) {
         await safelyDeleteUploadFile(oldUrl);
       }
 
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: true,
         url: `/api/file?pathname=${encodeURIComponent(blob.pathname)}`,
         fileName: uniqueFileName,
         message: "Foto berhasil diunggah ke penyimpanan cloud!",
       });
+      setAdminSessionCookie(response);
+      return response;
     }
 
     const uploadDir = path.join(process.cwd(), "public", "uploads");
@@ -104,12 +113,14 @@ export async function POST(req: NextRequest) {
 
     const publicUrl = `/uploads/${uniqueFileName}`;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       url: publicUrl,
       fileName: uniqueFileName,
       message: "Foto berhasil diunggah!",
     });
+    setAdminSessionCookie(response);
+    return response;
   } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json(
@@ -126,6 +137,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  if (!isAdminSessionValid(req)) return adminSessionExpiredResponse();
+
   try {
     const { url } = await req.json();
 
@@ -148,10 +161,12 @@ export async function DELETE(req: NextRequest) {
       await safelyDeleteUploadFile(url);
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: "File berhasil dihapus dari penyimpanan.",
     });
+    setAdminSessionCookie(response);
+    return response;
   } catch (error) {
     return NextResponse.json(
       {

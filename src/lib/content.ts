@@ -64,7 +64,7 @@ export async function saveContent(newData: CateringContent): Promise<CateringCon
   // STRICT VALIDATION: Max 10 photos in portfolio
   if (newData.portfolio && newData.portfolio.length > 10) {
     throw new Error(
-      "Kapasitas portofolio maksimal adalah 10 foto. Anda harus mengorbankan atau menghapus salah satu foto terlebih dahulu."
+      "Kapasitas portofolio maksimal adalah 10 foto. Hapus salah satu foto terlebih dahulu."
     );
   }
 
