@@ -6,7 +6,16 @@ export function isBlobStorageConfigured(): boolean {
 }
 
 export function shouldUseBlobStorage(): boolean {
-  // Jangan memaksa Blob hanya karena environment production. Jika token belum
-  // terpasang, CMS tetap dapat membaca sumber data lokal dan tidak crash saat boot.
-  return isBlobStorageConfigured();
+  if (isBlobStorageConfigured()) return true;
+
+  const isVercelDeployment =
+    process.env.VERCEL === "1" || Boolean(process.env.VERCEL_ENV);
+
+  if (isVercelDeployment) {
+    throw new Error(
+      "Penyimpanan CMS belum terhubung. Hubungkan Vercel Blob ke project ini agar perubahan tidak hilang.",
+    );
+  }
+
+  return false;
 }
