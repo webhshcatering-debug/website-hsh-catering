@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
 import "./globals.css";
+import { getContent } from "@/lib/content";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,11 +18,19 @@ const playfair = Playfair_Display({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Royal Rasa Catering & Event | Catering Pernikahan & Jamuan Premium",
-  description:
-    "Penyedia layanan boga dan katering premium untuk resepsi pernikahan elegan, jamuan korporat prestisius, dan private dining di Jakarta & Jabodetabek.",
-};
+export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const content = await getContent();
+
+  return {
+    title: content.seo.metaTitle,
+    icons: {
+      icon: content.seo.faviconUrl || "/favicon.ico",
+      shortcut: content.seo.faviconUrl || "/favicon.ico",
+    },
+  };
+}
 
 export default function RootLayout({
   children,

@@ -18,14 +18,9 @@ export async function generateMetadata(): Promise<Metadata> {
   const { seo, company } = content;
 
   return {
-    title: seo.metaTitle,
     description: seo.metaDescription,
     keywords: seo.keywords,
     authors: [{ name: company.name }],
-    icons: {
-      icon: seo.faviconUrl || "/favicon.ico",
-      shortcut: seo.faviconUrl || "/favicon.ico",
-    },
     openGraph: {
       title: seo.metaTitle,
       description: seo.metaDescription,

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   CateringContent,
   PortfolioItem,
@@ -66,6 +67,7 @@ function clearAdminSessionState() {
 }
 
 export default function AdminPage() {
+  const router = useRouter();
   const isAuthenticated = useSyncExternalStore(
     subscribeToAdminSession,
     getAdminSessionSnapshot,
@@ -286,6 +288,7 @@ export default function AdminPage() {
       }
 
       setContent(json.data);
+      if (activeTab === "seo") router.refresh();
       setSaveMessage({
         type: "success",
         text: "Perubahan berhasil disimpan dan siap ditampilkan di website.",
