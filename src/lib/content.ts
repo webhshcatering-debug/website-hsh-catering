@@ -31,6 +31,7 @@ function ensureSeoSettings(content: CateringContent): CateringContent {
       content.company.logoUrl ||
       content.portfolio[0]?.imageUrl ||
       "",
+    faviconUrl: seo?.faviconUrl || "/favicon.ico",
     canonicalUrl: seo?.canonicalUrl || "https://royalrasacatering.com",
   };
   return content;

@@ -30,6 +30,7 @@ export interface SeoSettings {
   metaDescription: string;
   keywords: string[];
   ogImage: string;
+  faviconUrl: string;
   canonicalUrl: string;
 }
 

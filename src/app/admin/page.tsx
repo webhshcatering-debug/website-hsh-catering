@@ -85,6 +85,7 @@ export default function AdminPage() {
     | "testimonials"
     | "faqs"
     | "company"
+    | "seo"
     | "logo"
   >("portfolio");
   const [isLoading, setIsLoading] = useState(true);
@@ -785,6 +786,18 @@ export default function AdminPage() {
           >
             <Share2 className="w-3.5 h-3.5" />
             <span>Kontak &amp; Sosmed</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("seo")}
+            className={`px-3.5 py-2 rounded-xl text-xs font-medium flex items-center gap-2 transition ${
+              activeTab === "seo"
+                ? "bg-[#FAF8F5] text-[#1C1917] font-semibold shadow"
+                : "bg-[#1C1917] text-[#8C827A] hover:text-white border border-[#2F2C2A]"
+            }`}
+          >
+            <Info className="w-3.5 h-3.5" />
+            <span>SEO &amp; Favicon</span>
           </button>
 
           <button
@@ -2443,7 +2456,146 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* ===================== TAB 8: LOGO ===================== */}
+        {/* ===================== TAB 8: SEO & FAVICON ===================== */}
+        {activeTab === "seo" && (
+          <div className="space-y-6 rounded-3xl border border-[#2F2C2A] bg-[#1C1917] p-6 sm:p-8">
+            <div>
+              <h3 className="mb-1 font-serif text-lg font-medium text-white">
+                Page Title &amp; Favicon
+              </h3>
+              <p className="text-xs text-[#8C827A]">
+                Atur judul tab browser dan ikon favicon website. Perubahan akan
+                tampil setelah disimpan.
+              </p>
+            </div>
+
+            <div>
+              <label
+                htmlFor="seo-page-title"
+                className="mb-1 block text-xs font-mono text-[#A8A29E]"
+              >
+                Page Title
+              </label>
+              <input
+                id="seo-page-title"
+                type="text"
+                maxLength={100}
+                value={content.seo.metaTitle}
+                onChange={(e) =>
+                  setContent({
+                    ...content,
+                    seo: { ...content.seo, metaTitle: e.target.value },
+                  })
+                }
+                placeholder="Nama brand | Deskripsi singkat"
+                className="w-full rounded-xl border border-[#2F2C2A] bg-[#141211] px-3.5 py-2.5 text-sm text-white"
+              />
+              <p className="mt-1 text-[11px] text-[#78716C]">
+                Judul ini digunakan pada tab browser, hasil pencarian, dan
+                preview media sosial.
+              </p>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+              <div>
+                <span className="mb-2 block text-xs font-mono text-[#A8A29E]">
+                  Pratinjau Favicon
+                </span>
+                <div className="flex h-36 items-center justify-center rounded-xl border border-dashed border-[#4A4541] bg-[#141211] p-4">
+                  {content.seo.faviconUrl ? (
+                    <img
+                      src={content.seo.faviconUrl}
+                      alt="Pratinjau favicon website"
+                      className="h-16 w-16 rounded-lg bg-white p-2 object-contain"
+                    />
+                  ) : (
+                    <span className="text-xs text-[#8C827A]">
+                      Belum ada favicon.
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="seo-favicon-url"
+                    className="mb-1 block text-xs font-mono text-[#A8A29E]"
+                  >
+                    URL Favicon
+                  </label>
+                  <input
+                    id="seo-favicon-url"
+                    type="text"
+                    value={content.seo.faviconUrl}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        seo: { ...content.seo, faviconUrl: e.target.value },
+                      })
+                    }
+                    placeholder="/favicon.ico atau URL gambar"
+                    className="w-full rounded-xl border border-[#2F2C2A] bg-[#141211] px-3.5 py-2.5 text-xs text-white"
+                  />
+                </div>
+
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[#4A4541] px-4 py-2.5 text-xs font-medium text-white transition hover:bg-[#2F2C2A]">
+                  <Upload className="h-4 w-4" />
+                  <span>
+                    {isUploading ? "Mengunggah..." : "Unggah favicon"}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon,image/vnd.microsoft.icon"
+                    disabled={isUploading}
+                    className="sr-only"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+
+                      setIsUploading(true);
+                      try {
+                        const faviconUrl = await uploadImageFile(file);
+                        setContent((current) =>
+                          current
+                            ? {
+                                ...current,
+                                seo: { ...current.seo, faviconUrl },
+                              }
+                            : current,
+                        );
+                      } catch (error) {
+                        setSaveMessage({
+                          type: "error",
+                          text:
+                            error instanceof Error
+                              ? error.message
+                              : "Gagal mengunggah favicon. Silakan coba lagi.",
+                        });
+                      } finally {
+                        setIsUploading(false);
+                        e.target.value = "";
+                      }
+                    }}
+                  />
+                </label>
+                <p className="text-[11px] text-[#78716C]">
+                  Format PNG, JPG, WebP, SVG, atau ICO; ukuran maksimum 5 MB.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => handleSave()}
+              disabled={isSaving || isUploading}
+              className="rounded-xl bg-[#FAF8F5] px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-[#1C1917] disabled:opacity-50"
+            >
+              Simpan Page Title &amp; Favicon
+            </button>
+          </div>
+        )}
+
+        {/* ===================== TAB 9: LOGO ===================== */}
         {activeTab === "logo" && (
           <div className="p-6 sm:p-8 rounded-3xl bg-[#1C1917] border border-[#2F2C2A] space-y-6">
             <div>

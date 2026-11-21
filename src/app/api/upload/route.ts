@@ -50,13 +50,15 @@ export async function POST(req: NextRequest) {
       "image/webp",
       "image/jpg",
       "image/svg+xml",
+      "image/x-icon",
+      "image/vnd.microsoft.icon",
     ];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "Format file tidak didukung! Gunakan JPG, PNG, WebP, atau SVG.",
+            "Format file tidak didukung! Gunakan JPG, PNG, WebP, SVG, atau ICO.",
         },
         { status: 400 }
       );
