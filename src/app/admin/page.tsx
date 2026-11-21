@@ -38,6 +38,9 @@ import {
 } from "lucide-react";
 
 const ADMIN_SESSION_EVENT = "royal-admin-session-change";
+const ADMIN_SESSION_KEY = "royal_admin_last_activity";
+const ADMIN_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
+const ADMIN_SESSION_REFRESH_INTERVAL_MS = 30 * 1000;
 
 function subscribeToAdminSession(onChange: () => void) {
   window.addEventListener("storage", onChange);
@@ -49,7 +52,17 @@ function subscribeToAdminSession(onChange: () => void) {
 }
 
 function getAdminSessionSnapshot() {
-  return localStorage.getItem("royal_admin_token") !== null;
+  const lastActivityAt = Number(localStorage.getItem(ADMIN_SESSION_KEY));
+  return (
+    Number.isFinite(lastActivityAt) &&
+    lastActivityAt > 0 &&
+    Date.now() - lastActivityAt < ADMIN_IDLE_TIMEOUT_MS
+  );
+}
+
+function clearAdminSessionState() {
+  localStorage.removeItem(ADMIN_SESSION_KEY);
+  window.dispatchEvent(new Event(ADMIN_SESSION_EVENT));
 }
 
 export default function AdminPage() {
@@ -72,6 +85,7 @@ export default function AdminPage() {
     | "testimonials"
     | "faqs"
     | "company"
+    | "seo"
     | "logo"
   >("portfolio");
   const [isLoading, setIsLoading] = useState(true);
@@ -90,6 +104,76 @@ export default function AdminPage() {
   const [newPhotoFile, setNewPhotoFile] = useState<File | null>(null);
   const [newPhotoUrl, setNewPhotoUrl] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    let idleTimeout: ReturnType<typeof setTimeout>;
+    let lastStoredAt = Date.now();
+    let lastSessionRefreshAt = 0;
+    let lastActivityHandledAt = 0;
+
+    const logoutAfterInactivity = () => {
+      clearAdminSessionState();
+      setAuthError("Sesi berakhir setelah 5 menit tidak aktif. Silakan masuk kembali.");
+      void fetch("/api/auth", { method: "DELETE", cache: "no-store" }).catch(
+        () => undefined,
+      );
+    };
+
+    const scheduleIdleLogout = (delay = ADMIN_IDLE_TIMEOUT_MS) => {
+      clearTimeout(idleTimeout);
+      idleTimeout = setTimeout(logoutAfterInactivity, delay);
+    };
+
+    const handleActivity = () => {
+      const now = Date.now();
+      if (now - lastActivityHandledAt < 1_000) return;
+      lastActivityHandledAt = now;
+
+      if (now - lastStoredAt >= 10_000) {
+        localStorage.setItem(ADMIN_SESSION_KEY, String(now));
+        lastStoredAt = now;
+      }
+
+      if (now - lastSessionRefreshAt >= ADMIN_SESSION_REFRESH_INTERVAL_MS) {
+        lastSessionRefreshAt = now;
+        void fetch("/api/auth", { cache: "no-store" })
+          .then((response) => {
+            if (response.status === 401) logoutAfterInactivity();
+          })
+          .catch(() => undefined);
+      }
+
+      scheduleIdleLogout();
+    };
+
+    const activityOptions: AddEventListenerOptions = { passive: true };
+    const activityEvents = [
+      "pointerdown",
+      "keydown",
+      "mousemove",
+      "scroll",
+      "touchstart",
+    ] as const;
+
+    const lastActivityAt = Number(localStorage.getItem(ADMIN_SESSION_KEY));
+    const remainingIdleTime = Math.max(
+      0,
+      ADMIN_IDLE_TIMEOUT_MS - (Date.now() - lastActivityAt),
+    );
+    scheduleIdleLogout(remainingIdleTime);
+    activityEvents.forEach((eventName) =>
+      window.addEventListener(eventName, handleActivity, activityOptions),
+    );
+
+    return () => {
+      clearTimeout(idleTimeout);
+      activityEvents.forEach((eventName) =>
+        window.removeEventListener(eventName, handleActivity, activityOptions),
+      );
+    };
+  }, [isAuthenticated]);
 
   useEffect(() => {
     fetch("/api/content", { cache: "no-store" })
@@ -131,7 +215,7 @@ export default function AdminPage() {
 
       const json = await res.json();
       if (json.success) {
-        localStorage.setItem("royal_admin_token", json.token);
+        localStorage.setItem(ADMIN_SESSION_KEY, String(Date.now()));
         window.dispatchEvent(new Event(ADMIN_SESSION_EVENT));
         setAuthError("");
       } else {
@@ -145,8 +229,10 @@ export default function AdminPage() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("royal_admin_token");
-    window.dispatchEvent(new Event(ADMIN_SESSION_EVENT));
+    clearAdminSessionState();
+    void fetch("/api/auth", { method: "DELETE", cache: "no-store" }).catch(
+      () => undefined,
+    );
   };
 
   const updateSectionVisibility = (
@@ -175,7 +261,7 @@ export default function AdminPage() {
     if (dataToSave.portfolio.length > 10) {
       setSaveMessage({
         type: "error",
-        text: "Kapasitas portofolio maksimal 10 foto! Anda harus mengorbankan salah satu foto terlebih dahulu.",
+        text: "Kapasitas portofolio maksimal 10 foto! Hapus salah satu foto terlebih dahulu."
       });
       return;
     }
@@ -191,6 +277,10 @@ export default function AdminPage() {
       });
 
       const json = await res.json();
+      if (res.status === 401) {
+        clearAdminSessionState();
+        setAuthError("Sesi login berakhir. Silakan masuk kembali.");
+      }
       if (!res.ok || !json.success || !json.data) {
         throw new Error(json.message || "Perubahan gagal disimpan.");
       }
@@ -225,6 +315,10 @@ export default function AdminPage() {
       body: formData,
     });
     const json = await res.json();
+    if (res.status === 401) {
+      clearAdminSessionState();
+      setAuthError("Sesi login berakhir. Silakan masuk kembali.");
+    }
     if (!res.ok || !json.success) {
       throw new Error(json.message || "Gagal mengunggah gambar.");
     }
@@ -297,15 +391,15 @@ export default function AdminPage() {
     setNewPhotoUrl("");
   };
 
-  // Portfolio: Sacrifice
-  const handleSacrificePhoto = (index: number) => {
+  // Portfolio: Delete
+  const handleDeletePhoto = (index: number) => {
     if (!content) return;
     const target = content.portfolio[index];
-    const confirmSacrifice = window.confirm(
-      `KORBANKAN FOTO INI?\n\nAnda akan menghapus foto "${target.title}" dari portofolio untuk mengosongkan 1 slot foto.\n\nLanjutkan?`,
+    const confirmDelete = window.confirm(
+      `HAPUS FOTO INI?\n\nFoto "${target.title}" akan dihapus dari portofolio.\n\nLanjutkan?`,
     );
 
-    if (confirmSacrifice) {
+    if (confirmDelete) {
       const updatedPortfolio = content.portfolio.filter(
         (_, idx) => idx !== index,
       );
@@ -695,6 +789,18 @@ export default function AdminPage() {
           </button>
 
           <button
+            onClick={() => setActiveTab("seo")}
+            className={`px-3.5 py-2 rounded-xl text-xs font-medium flex items-center gap-2 transition ${
+              activeTab === "seo"
+                ? "bg-[#FAF8F5] text-[#1C1917] font-semibold shadow"
+                : "bg-[#1C1917] text-[#8C827A] hover:text-white border border-[#2F2C2A]"
+            }`}
+          >
+            <Info className="w-3.5 h-3.5" />
+            <span>SEO &amp; Favicon</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab("logo")}
             className={`px-3.5 py-2 rounded-xl text-xs font-medium flex items-center gap-2 transition ${
               activeTab === "logo"
@@ -812,8 +918,8 @@ export default function AdminPage() {
                         ⚠️{" "}
                         <strong>KUOTA MAKSIMAL (10 FOTO) SUDAH PENUH!</strong>{" "}
                         Sesuai aturan: jika Anda ingin mengunggah foto baru,
-                        Anda <u>wajib mengorbankan (menghapus)</u> salah satu
-                        foto di bawah ini terlebih dahulu, atau klik{" "}
+                        Hapus salah satu foto di bawah ini terlebih dahulu, atau
+                        klik{" "}
                         <u>Ganti Gambar</u> pada slot yang ingin digantikan.
                       </span>
                     ) : (
@@ -837,7 +943,7 @@ export default function AdminPage() {
               </h3>
               <p className="text-xs text-[#8C827A] mb-5">
                 {isPortfolioFull
-                  ? "Form terkunci karena kapasitas sudah 10/10 foto. Korbankan salah satu foto di bawah untuk membuka slot baru."
+                  ? "Form terkunci karena kapasitas sudah 10/10 foto. Hapus salah satu foto di bawah untuk membuka slot baru."
                   : "Unggah foto dokumentasi acara baru untuk mengisi slot berikutnya."}
               </p>
 
@@ -1098,12 +1204,12 @@ export default function AdminPage() {
                     </div>
 
                     <button
-                      onClick={() => handleSacrificePhoto(index)}
+                      onClick={() => handleDeletePhoto(index)}
                       className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-950/60 hover:bg-rose-900 text-rose-300 text-xs font-semibold transition border border-rose-800"
-                      title="Korbankan foto ini untuk mengosongkan 1 slot"
+                      title="Hapus foto ini"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                      <span>Korbankan Foto</span>
+                      <span>Hapus</span>
                     </button>
                   </div>
                 </div>
@@ -2350,7 +2456,146 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* ===================== TAB 8: LOGO ===================== */}
+        {/* ===================== TAB 8: SEO & FAVICON ===================== */}
+        {activeTab === "seo" && (
+          <div className="space-y-6 rounded-3xl border border-[#2F2C2A] bg-[#1C1917] p-6 sm:p-8">
+            <div>
+              <h3 className="mb-1 font-serif text-lg font-medium text-white">
+                Page Title &amp; Favicon
+              </h3>
+              <p className="text-xs text-[#8C827A]">
+                Atur judul tab browser dan ikon favicon website. Perubahan akan
+                tampil setelah disimpan.
+              </p>
+            </div>
+
+            <div>
+              <label
+                htmlFor="seo-page-title"
+                className="mb-1 block text-xs font-mono text-[#A8A29E]"
+              >
+                Page Title
+              </label>
+              <input
+                id="seo-page-title"
+                type="text"
+                maxLength={100}
+                value={content.seo.metaTitle}
+                onChange={(e) =>
+                  setContent({
+                    ...content,
+                    seo: { ...content.seo, metaTitle: e.target.value },
+                  })
+                }
+                placeholder="Nama brand | Deskripsi singkat"
+                className="w-full rounded-xl border border-[#2F2C2A] bg-[#141211] px-3.5 py-2.5 text-sm text-white"
+              />
+              <p className="mt-1 text-[11px] text-[#78716C]">
+                Judul ini digunakan pada tab browser, hasil pencarian, dan
+                preview media sosial.
+              </p>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+              <div>
+                <span className="mb-2 block text-xs font-mono text-[#A8A29E]">
+                  Pratinjau Favicon
+                </span>
+                <div className="flex h-36 items-center justify-center rounded-xl border border-dashed border-[#4A4541] bg-[#141211] p-4">
+                  {content.seo.faviconUrl ? (
+                    <img
+                      src={content.seo.faviconUrl}
+                      alt="Pratinjau favicon website"
+                      className="h-16 w-16 rounded-lg bg-white p-2 object-contain"
+                    />
+                  ) : (
+                    <span className="text-xs text-[#8C827A]">
+                      Belum ada favicon.
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="seo-favicon-url"
+                    className="mb-1 block text-xs font-mono text-[#A8A29E]"
+                  >
+                    URL Favicon
+                  </label>
+                  <input
+                    id="seo-favicon-url"
+                    type="text"
+                    value={content.seo.faviconUrl}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        seo: { ...content.seo, faviconUrl: e.target.value },
+                      })
+                    }
+                    placeholder="/favicon.ico atau URL gambar"
+                    className="w-full rounded-xl border border-[#2F2C2A] bg-[#141211] px-3.5 py-2.5 text-xs text-white"
+                  />
+                </div>
+
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[#4A4541] px-4 py-2.5 text-xs font-medium text-white transition hover:bg-[#2F2C2A]">
+                  <Upload className="h-4 w-4" />
+                  <span>
+                    {isUploading ? "Mengunggah..." : "Unggah favicon"}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon,image/vnd.microsoft.icon"
+                    disabled={isUploading}
+                    className="sr-only"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+
+                      setIsUploading(true);
+                      try {
+                        const faviconUrl = await uploadImageFile(file);
+                        setContent((current) =>
+                          current
+                            ? {
+                                ...current,
+                                seo: { ...current.seo, faviconUrl },
+                              }
+                            : current,
+                        );
+                      } catch (error) {
+                        setSaveMessage({
+                          type: "error",
+                          text:
+                            error instanceof Error
+                              ? error.message
+                              : "Gagal mengunggah favicon. Silakan coba lagi.",
+                        });
+                      } finally {
+                        setIsUploading(false);
+                        e.target.value = "";
+                      }
+                    }}
+                  />
+                </label>
+                <p className="text-[11px] text-[#78716C]">
+                  Format PNG, JPG, WebP, SVG, atau ICO; ukuran maksimum 5 MB.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => handleSave()}
+              disabled={isSaving || isUploading}
+              className="rounded-xl bg-[#FAF8F5] px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-[#1C1917] disabled:opacity-50"
+            >
+              Simpan Page Title &amp; Favicon
+            </button>
+          </div>
+        )}
+
+        {/* ===================== TAB 9: LOGO ===================== */}
         {activeTab === "logo" && (
           <div className="p-6 sm:p-8 rounded-3xl bg-[#1C1917] border border-[#2F2C2A] space-y-6">
             <div>
