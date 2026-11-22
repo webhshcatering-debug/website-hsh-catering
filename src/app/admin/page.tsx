@@ -12,6 +12,7 @@ import {
   SectionVisibility,
   HeroQualityCard,
   HeroVisualCopy,
+  HeroVisualImages,
 } from "@/types/content";
 import {
   Camera,
@@ -258,6 +259,20 @@ export default function AdminPage() {
     });
   };
 
+  const updateHeroVisualImages = (
+    field: keyof HeroVisualImages,
+    value: string,
+  ) => {
+    if (!content) return;
+    setContent({
+      ...content,
+      hero: {
+        ...content.hero,
+        visualImages: { ...content.hero.visualImages, [field]: value },
+      },
+    });
+  };
+
   const updateHeroQualityCard = (
     field: keyof HeroQualityCard,
     value: string,
@@ -356,6 +371,37 @@ export default function AdminPage() {
       throw new Error(json.message || "Gagal mengunggah gambar.");
     }
     return json.url;
+  };
+
+  const handleHeroImageUpload = async (
+    file: File,
+    field: keyof HeroVisualImages,
+  ) => {
+    setIsUploading(true);
+    try {
+      const imageUrl = await uploadImageFile(file);
+      setContent((current) =>
+        current
+          ? {
+              ...current,
+              hero: {
+                ...current.hero,
+                visualImages: { ...current.hero.visualImages, [field]: imageUrl },
+              },
+            }
+          : current,
+      );
+    } catch (error) {
+      setSaveMessage({
+        type: "error",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Gagal mengunggah foto Hero. Silakan coba lagi.",
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   // Portfolio: Add
@@ -631,7 +677,7 @@ export default function AdminPage() {
 
             <button
               onClick={() => handleSave()}
-              disabled={isSaving}
+              disabled={isSaving || isUploading}
               className="inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-[#FAF8F5] px-2.5 text-xs font-semibold text-[#1C1917] shadow-sm transition hover:bg-white disabled:opacity-50 sm:px-4"
             >
               {isSaving ? (
@@ -1471,6 +1517,83 @@ export default function AdminPage() {
             <div className="pt-4 border-t border-[#2F2C2A] space-y-4">
               <div>
                 <h4 className="text-xs uppercase font-mono tracking-wider text-[#DFC69F] mb-1">
+                  Foto Hero
+                </h4>
+                <p className="text-[11px] text-[#8C827A]">
+                  Ganti foto utama dan foto kedua dengan URL atau unggah file baru.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {([
+                  {
+                    field: "featuredUrl",
+                    label: "Foto Utama",
+                    alt: content.hero.visualCopy.featuredImageAlt,
+                  },
+                  {
+                    field: "secondaryUrl",
+                    label: "Foto Kedua",
+                    alt: content.hero.visualCopy.secondaryImageAlt,
+                  },
+                ] as const).map(({ field, label, alt }) => (
+                  <div
+                    key={field}
+                    className="rounded-xl border border-[#2F2C2A] bg-[#141211] p-4 space-y-3"
+                  >
+                    <div className="flex h-36 items-center justify-center overflow-hidden rounded-lg bg-[#201E1C]">
+                      {content.hero.visualImages[field] ? (
+                        <img
+                          src={content.hero.visualImages[field]}
+                          alt={alt}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-xs text-[#8C827A]">
+                          Belum ada foto.
+                        </span>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-xs font-mono text-[#A8A29E]">
+                        URL {label}
+                      </label>
+                      <input
+                        type="text"
+                        value={content.hero.visualImages[field]}
+                        onChange={(e) =>
+                          updateHeroVisualImages(field, e.target.value)
+                        }
+                        placeholder="https://..."
+                        className="w-full rounded-xl border border-[#2F2C2A] bg-[#201E1C] px-3 py-2 text-xs text-white"
+                      />
+                    </div>
+
+                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[#4A4541] px-3 py-2 text-xs font-medium text-white transition hover:bg-[#2F2C2A]">
+                      <Upload className="h-3.5 w-3.5" />
+                      <span>{isUploading ? "Mengunggah..." : `Unggah ${label}`}</span>
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                        disabled={isUploading}
+                        className="sr-only"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          await handleHeroImageUpload(file, field);
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-[#2F2C2A] space-y-4">
+              <div>
+                <h4 className="text-xs uppercase font-mono tracking-wider text-[#DFC69F] mb-1">
                   Kartu Komitmen Mutu &amp; Higienitas
                 </h4>
                 <p className="text-[11px] text-[#8C827A]">
@@ -1613,7 +1736,8 @@ export default function AdminPage() {
 
             <button
               onClick={() => handleSave()}
-              className="px-5 py-2.5 rounded-xl bg-[#FAF8F5] text-[#1C1917] font-semibold text-xs uppercase tracking-wider"
+              disabled={isSaving || isUploading}
+              className="px-5 py-2.5 rounded-xl bg-[#FAF8F5] text-[#1C1917] font-semibold text-xs uppercase tracking-wider disabled:opacity-50"
             >
               Simpan Hero
             </button>

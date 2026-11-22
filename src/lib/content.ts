@@ -26,6 +26,13 @@ const DEFAULT_HERO_VISUAL_COPY = {
   secondaryTitle: "Carving & Fine Dining Set Menu",
 };
 
+const DEFAULT_HERO_VISUAL_IMAGES = {
+  featuredUrl:
+    "https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1600&q=85",
+  secondaryUrl:
+    "https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=800&q=85",
+};
+
 async function readCloudContent(): Promise<CateringContent | null> {
   const result = await get(CONTENT_BLOB_PATH, { access: "private" });
   if (!result) return null;
@@ -41,6 +48,10 @@ function ensureHeroContent(content: CateringContent): CateringContent {
   content.hero.visualCopy = {
     ...DEFAULT_HERO_VISUAL_COPY,
     ...content.hero.visualCopy,
+  };
+  content.hero.visualImages = {
+    ...DEFAULT_HERO_VISUAL_IMAGES,
+    ...content.hero.visualImages,
   };
   return content;
 }

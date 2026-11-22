@@ -65,6 +65,11 @@ export interface HeroVisualCopy {
   secondaryTitle: string;
 }
 
+export interface HeroVisualImages {
+  featuredUrl: string;
+  secondaryUrl: string;
+}
+
 export interface HeroSection {
   badge: string;
   headline: string;
@@ -72,6 +77,7 @@ export interface HeroSection {
   ctaWhatsappText: string;
   ctaPortfolioText: string;
   visualCopy: HeroVisualCopy;
+  visualImages: HeroVisualImages;
   qualityCard: HeroQualityCard;
   stats: StatItem[];
 }

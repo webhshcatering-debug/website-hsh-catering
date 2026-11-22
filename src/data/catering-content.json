@@ -52,6 +52,10 @@
       "secondaryEyebrow": "Live Culinary Station",
       "secondaryTitle": "Carving & Fine Dining Set Menu"
     },
+    "visualImages": {
+      "featuredUrl": "https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1600&q=85",
+      "secondaryUrl": "https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=800&q=85"
+    },
     "qualityCard": {
       "badge": "Komitmen Mutu & Higienitas",
       "headline": "Executive Chef & 100% Sertifikasi Halal",

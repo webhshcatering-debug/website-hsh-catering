@@ -68,7 +68,7 @@ export default function Hero({ company, hero }: HeroProps) {
           {/* Main Large Visual */}
           <div className="lg:col-span-8 relative rounded-3xl overflow-hidden aspect-[16/10] bg-[#EFECE6] border border-[#E7E2D8] group shadow-[0_10px_30px_rgba(28,25,23,0.06)]">
             <img
-              src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1600&q=85"
+              src={hero.visualImages.featuredUrl}
               alt={hero.visualCopy.featuredImageAlt}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-102"
             />
@@ -116,7 +116,7 @@ export default function Hero({ company, hero }: HeroProps) {
             {/* Card 2: Small atmospheric picture */}
             <div className="relative rounded-3xl overflow-hidden aspect-[16/9] lg:aspect-auto lg:h-48 bg-[#EFECE6] border border-[#E7E2D8] group">
               <img
-                src="https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=800&q=80"
+                src={hero.visualImages.secondaryUrl}
                 alt={hero.visualCopy.secondaryImageAlt}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
