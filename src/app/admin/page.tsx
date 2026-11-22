@@ -11,6 +11,7 @@ import {
   FaqItem,
   SectionVisibility,
   HeroQualityCard,
+  HeroVisualCopy,
 } from "@/types/content";
 import {
   Camera,
@@ -267,6 +268,20 @@ export default function AdminPage() {
       hero: {
         ...content.hero,
         qualityCard: { ...content.hero.qualityCard, [field]: value },
+      },
+    });
+  };
+
+  const updateHeroVisualCopy = (
+    field: keyof HeroVisualCopy,
+    value: string,
+  ) => {
+    if (!content) return;
+    setContent({
+      ...content,
+      hero: {
+        ...content.hero,
+        visualCopy: { ...content.hero.visualCopy, [field]: value },
       },
     });
   };
@@ -1339,6 +1354,117 @@ export default function AdminPage() {
                   }
                   className="w-full px-3.5 py-2 rounded-xl bg-[#141211] border border-[#2F2C2A] text-white text-xs"
                 />
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-[#2F2C2A] space-y-4">
+              <div>
+                <h4 className="text-xs uppercase font-mono tracking-wider text-[#DFC69F] mb-1">
+                  Teks Foto Hero
+                </h4>
+                <p className="text-[11px] text-[#8C827A]">
+                  Ubah caption foto utama dan foto kedua yang tampil di section Hero.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-mono text-[#A8A29E] mb-1">
+                    Alt Text Foto Utama
+                  </label>
+                  <input
+                    type="text"
+                    value={content.hero.visualCopy.featuredImageAlt}
+                    onChange={(e) =>
+                      updateHeroVisualCopy("featuredImageAlt", e.target.value)
+                    }
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#141211] border border-[#2F2C2A] text-white text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono text-[#A8A29E] mb-1">
+                    Label Foto Utama
+                  </label>
+                  <input
+                    type="text"
+                    value={content.hero.visualCopy.featuredEyebrow}
+                    onChange={(e) =>
+                      updateHeroVisualCopy("featuredEyebrow", e.target.value)
+                    }
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#141211] border border-[#2F2C2A] text-white text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono text-[#A8A29E] mb-1">
+                    Judul Foto Utama
+                  </label>
+                  <input
+                    type="text"
+                    value={content.hero.visualCopy.featuredTitle}
+                    onChange={(e) =>
+                      updateHeroVisualCopy("featuredTitle", e.target.value)
+                    }
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#141211] border border-[#2F2C2A] text-white text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono text-[#A8A29E] mb-1">
+                    Jumlah Tamu Foto Utama
+                  </label>
+                  <input
+                    type="text"
+                    value={content.hero.visualCopy.featuredGuestCount}
+                    onChange={(e) =>
+                      updateHeroVisualCopy("featuredGuestCount", e.target.value)
+                    }
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#141211] border border-[#2F2C2A] text-white text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono text-[#A8A29E] mb-1">
+                    Alt Text Foto Kedua
+                  </label>
+                  <input
+                    type="text"
+                    value={content.hero.visualCopy.secondaryImageAlt}
+                    onChange={(e) =>
+                      updateHeroVisualCopy("secondaryImageAlt", e.target.value)
+                    }
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#141211] border border-[#2F2C2A] text-white text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono text-[#A8A29E] mb-1">
+                    Label Foto Kedua
+                  </label>
+                  <input
+                    type="text"
+                    value={content.hero.visualCopy.secondaryEyebrow}
+                    onChange={(e) =>
+                      updateHeroVisualCopy("secondaryEyebrow", e.target.value)
+                    }
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#141211] border border-[#2F2C2A] text-white text-xs"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-mono text-[#A8A29E] mb-1">
+                    Judul Foto Kedua
+                  </label>
+                  <input
+                    type="text"
+                    value={content.hero.visualCopy.secondaryTitle}
+                    onChange={(e) =>
+                      updateHeroVisualCopy("secondaryTitle", e.target.value)
+                    }
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#141211] border border-[#2F2C2A] text-white text-xs"
+                  />
+                </div>
               </div>
             </div>
 

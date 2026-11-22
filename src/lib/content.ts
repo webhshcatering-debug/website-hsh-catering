@@ -16,6 +16,16 @@ const DEFAULT_HERO_QUALITY_CARD = {
   footerRight: "Free Food Tasting",
 };
 
+const DEFAULT_HERO_VISUAL_COPY = {
+  featuredImageAlt: "Grand Wedding Banquet Table Decor",
+  featuredEyebrow: "Private Ballroom Reception",
+  featuredTitle: "Grand Ballroom Hotel Mulia Senayan",
+  featuredGuestCount: "1.200 Tamu Undangan",
+  secondaryImageAlt: "Plating detail",
+  secondaryEyebrow: "Live Culinary Station",
+  secondaryTitle: "Carving & Fine Dining Set Menu",
+};
+
 async function readCloudContent(): Promise<CateringContent | null> {
   const result = await get(CONTENT_BLOB_PATH, { access: "private" });
   if (!result) return null;
@@ -23,10 +33,14 @@ async function readCloudContent(): Promise<CateringContent | null> {
   return JSON.parse(await new Response(result.stream).text()) as CateringContent;
 }
 
-function ensureHeroQualityCard(content: CateringContent): CateringContent {
+function ensureHeroContent(content: CateringContent): CateringContent {
   content.hero.qualityCard = {
     ...DEFAULT_HERO_QUALITY_CARD,
     ...content.hero.qualityCard,
+  };
+  content.hero.visualCopy = {
+    ...DEFAULT_HERO_VISUAL_COPY,
+    ...content.hero.visualCopy,
   };
   return content;
 }
@@ -61,7 +75,7 @@ export async function getContent(): Promise<CateringContent> {
       ? cloudData
       : JSON.parse(await fs.readFile(DATA_FILE_PATH, "utf-8"));
     ensureSeoSettings(data);
-    ensureHeroQualityCard(data);
+    ensureHeroContent(data);
 
     // Safety check: ensure portfolio never exceeds 10
     if (data.portfolio && data.portfolio.length > 10) {
@@ -88,7 +102,7 @@ export async function saveContent(newData: CateringContent): Promise<CateringCon
   }
 
   ensureSeoSettings(newData);
-  ensureHeroQualityCard(newData);
+  ensureHeroContent(newData);
   newData.lastUpdated = new Date().toISOString();
 
   const jsonString = JSON.stringify(newData, null, 2);

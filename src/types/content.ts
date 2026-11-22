@@ -55,12 +55,23 @@ export interface HeroQualityCard {
   footerRight: string;
 }
 
+export interface HeroVisualCopy {
+  featuredImageAlt: string;
+  featuredEyebrow: string;
+  featuredTitle: string;
+  featuredGuestCount: string;
+  secondaryImageAlt: string;
+  secondaryEyebrow: string;
+  secondaryTitle: string;
+}
+
 export interface HeroSection {
   badge: string;
   headline: string;
   subheadline: string;
   ctaWhatsappText: string;
   ctaPortfolioText: string;
+  visualCopy: HeroVisualCopy;
   qualityCard: HeroQualityCard;
   stats: StatItem[];
 }

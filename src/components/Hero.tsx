@@ -69,21 +69,21 @@ export default function Hero({ company, hero }: HeroProps) {
           <div className="lg:col-span-8 relative rounded-3xl overflow-hidden aspect-[16/10] bg-[#EFECE6] border border-[#E7E2D8] group shadow-[0_10px_30px_rgba(28,25,23,0.06)]">
             <img
               src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1600&q=85"
-              alt="Grand Wedding Banquet Table Decor"
+              alt={hero.visualCopy.featuredImageAlt}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-102"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
             <div className="absolute bottom-6 left-6 right-6 text-white flex items-end justify-between">
               <div>
                 <p className="text-[10px] tracking-[0.2em] uppercase font-medium text-[#E6D5B8] mb-1">
-                  Private Ballroom Reception
+                  {hero.visualCopy.featuredEyebrow}
                 </p>
                 <p className="font-serif text-xl sm:text-2xl font-normal">
-                  Grand Ballroom Hotel Mulia Senayan
+                  {hero.visualCopy.featuredTitle}
                 </p>
               </div>
               <span className="hidden sm:inline-block text-[11px] font-mono tracking-wide px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/20">
-                1.200 Tamu Undangan
+                {hero.visualCopy.featuredGuestCount}
               </span>
             </div>
           </div>
@@ -117,16 +117,16 @@ export default function Hero({ company, hero }: HeroProps) {
             <div className="relative rounded-3xl overflow-hidden aspect-[16/9] lg:aspect-auto lg:h-48 bg-[#EFECE6] border border-[#E7E2D8] group">
               <img
                 src="https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=800&q=80"
-                alt="Plating detail"
+                alt={hero.visualCopy.secondaryImageAlt}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
               <div className="absolute inset-0 bg-black/30" />
               <div className="absolute bottom-4 left-4 right-4 text-white">
                 <p className="text-[10px] tracking-[0.18em] uppercase text-[#DFC69F]">
-                  Live Culinary Station
+                  {hero.visualCopy.secondaryEyebrow}
                 </p>
                 <p className="font-serif text-sm font-normal">
-                  Carving &amp; Fine Dining Set Menu
+                  {hero.visualCopy.secondaryTitle}
                 </p>
               </div>
             </div>
