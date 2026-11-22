@@ -10,6 +10,7 @@ import {
   TestimonialItem,
   FaqItem,
   SectionVisibility,
+  HeroQualityCard,
 } from "@/types/content";
 import {
   Camera,
@@ -252,6 +253,20 @@ export default function AdminPage() {
         testimonials: content.sectionVisibility?.testimonials ?? true,
         faqs: content.sectionVisibility?.faqs ?? true,
         [section]: visible,
+      },
+    });
+  };
+
+  const updateHeroQualityCard = (
+    field: keyof HeroQualityCard,
+    value: string,
+  ) => {
+    if (!content) return;
+    setContent({
+      ...content,
+      hero: {
+        ...content.hero,
+        qualityCard: { ...content.hero.qualityCard, [field]: value },
       },
     });
   };
@@ -1324,6 +1339,89 @@ export default function AdminPage() {
                   }
                   className="w-full px-3.5 py-2 rounded-xl bg-[#141211] border border-[#2F2C2A] text-white text-xs"
                 />
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-[#2F2C2A] space-y-4">
+              <div>
+                <h4 className="text-xs uppercase font-mono tracking-wider text-[#DFC69F] mb-1">
+                  Kartu Komitmen Mutu &amp; Higienitas
+                </h4>
+                <p className="text-[11px] text-[#8C827A]">
+                  Ubah seluruh teks pada kartu kualitas di section Hero.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-mono text-[#A8A29E] mb-1">
+                    Label Kartu
+                  </label>
+                  <input
+                    type="text"
+                    value={content.hero.qualityCard.badge}
+                    onChange={(e) =>
+                      updateHeroQualityCard("badge", e.target.value)
+                    }
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#141211] border border-[#2F2C2A] text-white text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono text-[#A8A29E] mb-1">
+                    Judul Kartu
+                  </label>
+                  <input
+                    type="text"
+                    value={content.hero.qualityCard.headline}
+                    onChange={(e) =>
+                      updateHeroQualityCard("headline", e.target.value)
+                    }
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#141211] border border-[#2F2C2A] text-white text-xs"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-mono text-[#A8A29E] mb-1">
+                    Deskripsi Kartu
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={content.hero.qualityCard.description}
+                    onChange={(e) =>
+                      updateHeroQualityCard("description", e.target.value)
+                    }
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#141211] border border-[#2F2C2A] text-white text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono text-[#A8A29E] mb-1">
+                    Teks Bagian Bawah Kiri
+                  </label>
+                  <input
+                    type="text"
+                    value={content.hero.qualityCard.footerLeft}
+                    onChange={(e) =>
+                      updateHeroQualityCard("footerLeft", e.target.value)
+                    }
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#141211] border border-[#2F2C2A] text-white text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono text-[#A8A29E] mb-1">
+                    Teks Bagian Bawah Kanan
+                  </label>
+                  <input
+                    type="text"
+                    value={content.hero.qualityCard.footerRight}
+                    onChange={(e) =>
+                      updateHeroQualityCard("footerRight", e.target.value)
+                    }
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#141211] border border-[#2F2C2A] text-white text-xs"
+                  />
+                </div>
               </div>
             </div>
 

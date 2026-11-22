@@ -47,12 +47,21 @@ export interface StatItem {
   subtext: string;
 }
 
+export interface HeroQualityCard {
+  badge: string;
+  headline: string;
+  description: string;
+  footerLeft: string;
+  footerRight: string;
+}
+
 export interface HeroSection {
   badge: string;
   headline: string;
   subheadline: string;
   ctaWhatsappText: string;
   ctaPortfolioText: string;
+  qualityCard: HeroQualityCard;
   stats: StatItem[];
 }
 

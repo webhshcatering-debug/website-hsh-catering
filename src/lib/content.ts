@@ -7,11 +7,28 @@ import { shouldUseBlobStorage } from "@/lib/blob-storage";
 const DATA_FILE_PATH = path.join(process.cwd(), "src", "data", "catering-content.json");
 const CONTENT_BLOB_PATH = "cms/catering-content.json";
 
+const DEFAULT_HERO_QUALITY_CARD = {
+  badge: "Komitmen Mutu & Higienitas",
+  headline: "Executive Chef & 100% Sertifikasi Halal",
+  description:
+    "Setiap menu diracik di bawah standar sanitasi HACCP dan bahan baku segar pilihan Grade A dari mitra petani terpercaya.",
+  footerLeft: "Tasting Lounge Senopati",
+  footerRight: "Free Food Tasting",
+};
+
 async function readCloudContent(): Promise<CateringContent | null> {
   const result = await get(CONTENT_BLOB_PATH, { access: "private" });
   if (!result) return null;
 
   return JSON.parse(await new Response(result.stream).text()) as CateringContent;
+}
+
+function ensureHeroQualityCard(content: CateringContent): CateringContent {
+  content.hero.qualityCard = {
+    ...DEFAULT_HERO_QUALITY_CARD,
+    ...content.hero.qualityCard,
+  };
+  return content;
 }
 
 function ensureSeoSettings(content: CateringContent): CateringContent {
@@ -44,6 +61,7 @@ export async function getContent(): Promise<CateringContent> {
       ? cloudData
       : JSON.parse(await fs.readFile(DATA_FILE_PATH, "utf-8"));
     ensureSeoSettings(data);
+    ensureHeroQualityCard(data);
 
     // Safety check: ensure portfolio never exceeds 10
     if (data.portfolio && data.portfolio.length > 10) {
@@ -70,6 +88,7 @@ export async function saveContent(newData: CateringContent): Promise<CateringCon
   }
 
   ensureSeoSettings(newData);
+  ensureHeroQualityCard(newData);
   newData.lastUpdated = new Date().toISOString();
 
   const jsonString = JSON.stringify(newData, null, 2);

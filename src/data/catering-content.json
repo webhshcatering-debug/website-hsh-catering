@@ -43,6 +43,13 @@
     "subheadline": "Dari jamuan resepsi pernikahan impian hingga gala dinner prestisius. Kami memadukan bahan baku premium, estetika dekorasi boga, dan kehangatan layanan prima tanpa cela.",
     "ctaWhatsappText": "Konsultasi Menu & Jadwal",
     "ctaPortfolioText": "Eksplorasi Galeri Acara",
+    "qualityCard": {
+      "badge": "Komitmen Mutu & Higienitas",
+      "headline": "Executive Chef & 100% Sertifikasi Halal",
+      "description": "Setiap menu diracik di bawah standar sanitasi HACCP dan bahan baku segar pilihan Grade A dari mitra petani terpercaya.",
+      "footerLeft": "Tasting Lounge Senopati",
+      "footerRight": "Free Food Tasting"
+    },
     "stats": [
       {
         "id": "stat-1",

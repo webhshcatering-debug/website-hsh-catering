@@ -94,19 +94,22 @@ export default function Hero({ company, hero }: HeroProps) {
             <div className="rounded-3xl p-7 bg-white border border-[#E7E2D8] flex-1 flex flex-col justify-between shadow-[0_4px_20px_rgba(28,25,23,0.03)]">
               <div>
                 <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#8C827A] block mb-2">
-                  Komitmen Mutu &amp; Higienitas
+                  {hero.qualityCard.badge}
                 </span>
                 <h3 className="font-serif text-2xl font-normal text-[#1C1917] mb-3">
-                  Executive Chef &amp; 100% Sertifikasi Halal
+                  {hero.qualityCard.headline}
                 </h3>
                 <p className="text-xs text-[#57534E] leading-relaxed">
-                  Setiap menu diracik di bawah standar sanitasi HACCP dan bahan baku segar pilihan Grade A dari mitra petani terpercaya.
+                  {hero.qualityCard.description}
                 </p>
               </div>
 
               <div className="pt-4 border-t border-[#F4EFEB] flex items-center justify-between text-xs text-[#8C827A]">
-                <span>Tasting Lounge Senopati</span>
-                <span className="font-mono text-[#1C1917]">Free Food Tasting</span>
+                  <span>{hero.qualityCard.footerLeft}</span>
+                  <span className="font-mono text-[#1C1917]">
+                    {hero.qualityCard.footerRight}
+                  </span>
+
               </div>
             </div>
 
